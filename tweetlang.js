@@ -45,30 +45,86 @@ if (Meteor.isServer) {
       });
     }
 
+    Async = Meteor.require('async');
+    function detectLanguages (texts, callback) {
+
+      function fetchLanguages (texts, callback){
+        if (!texts || !texts.length) {
+          callback(null, []);
+          return;
+        }
+        var url = 'http://api.microsofttranslator.com/V2/Ajax.svc/DetectArray?appId=6E048DBAEE2BCE70051BE0D55A17101B5DC15DE6&texts='+encodeURIComponent(JSON.stringify(texts));
+        Request.get(url,function (err, response, body) {
+          if (err) {
+            return callback(err);
+          }
+          // bing's api return BOM!!
+          body = body.replace(/^\uFEFF/g, '');
+          var languagesArray;
+          try{
+            languagesArray = JSON.parse(body);
+          }catch(e){
+            return callback('JSON Error '+e);
+          }
+          callback(null, languagesArray);
+        });
+      }
+
+      // because microsoft says request cannot be too long
+      Async.parallel([
+        function(callback){
+          fetchLanguages(texts.slice(0,40), callback)
+        },
+        function(callback){
+          fetchLanguages(texts.slice(40,80), callback)
+        },
+        function(callback){
+          fetchLanguages(texts.slice(80,120), callback)
+        },
+        function(callback){
+          fetchLanguages(texts.slice(120,160), callback)
+        },
+        function(callback){
+          fetchLanguages(texts.slice(160,200), callback)
+        },
+      ], function (err, results) {
+        if (err) {
+          return callback(err);
+        }
+
+        var counts = {};
+        results
+        .reduce(function(prev, current){
+          return prev.concat(current);
+        },[])
+        .forEach(function(language){
+          if (!(language in counts)) {
+            counts[language] = 1;
+          } else {
+            counts[language]++;
+          }
+        });
+        callback(null, counts);
+      });
+    }
+
     Meteor.methods({
       getUserStats: function(username) {
         // load Future
         Future = Npm.require('fibers/future');
         var myFuture = new Future();
         
-        // // call the function and store its result
-        // SomeAsynchronousFunction("foo", function (error,results){
-        //   if(error){
-        //     myFuture.throw(error);
-        //   }else{
-        //     myFuture.return(results);
-        //   }
-        // });
         getUserTweets(username, function(err, tweets){
-          
+          if (err) {
+            return myFuture.throw(err);
+          }
+          detectLanguages(tweets, function(err, counts){
+            if (err) {
+              return myFuture.throw(err);
+            }
+            myFuture.return(counts);
+          });
         });
-
-        setTimeout(function() {
-
-          // Return the results
-          myFuture.return("hello (delayed for 3 seconds)");
-
-        }, 3 * 1000);
     
         return myFuture.wait();
       }
