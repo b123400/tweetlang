@@ -3,6 +3,18 @@ if (Meteor.isClient) {
   //   return "Welcome to tweetlang.";
   // };
 
+  Template.usernameInput.result = function(){
+    return JSON.stringify(Session.get('stats'));
+  }
+
+  function getRandColor(brightness){
+    //6 levels of brightness from 0 to 5, 0 being the darkest
+    var rgb = [Math.random() * 256, Math.random() * 256, Math.random() * 256];
+    var mix = [brightness*51, brightness*51, brightness*51]; //51 => 255/5
+    var mixedrgb = [rgb[0] + mix[0], rgb[1] + mix[1], rgb[2] + mix[2]].map(function(x){ return (x/2.0).round()})
+    return "rgb(" + mixedrgb.join(",") + ")";
+  }
+
   Template.usernameInput.events({
     'click input[type=button]': function () {
       // template data, if any, is available in 'this'
@@ -11,10 +23,38 @@ if (Meteor.isClient) {
       }
 
       Meteor.call('getUserStats', $('#username').val(), function(err, result){
-        console.log(arguments);
+        var data = Object.keys(result).map(function(key){
+          return {
+            value : result[key],
+            label : key,
+            color: '#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6)
+          }
+        });
+        refreshCanvas(data);
       });
     }
   });
+
+  Template.chart.legend = function(){
+    return Session.get('legend');
+  }
+
+  Meteor.startup(function(){
+    setupCanvas();
+  });
+
+  var chart, ctx;
+  function setupCanvas(){
+    ctx = $('#chart')[0].getContext('2d');
+  }
+  function refreshCanvas(data){
+    if (chart) {
+      chart.destroy();
+    }
+    chart = new Chart(ctx).Doughnut(data,{});
+    Session.set('legend', chart.generateLegend())
+    window.chart = chart
+  }
 }
 
 if (Meteor.isServer) {
@@ -91,7 +131,6 @@ if (Meteor.isServer) {
         if (err) {
           return callback(err);
         }
-
         var counts = {};
         results
         .reduce(function(prev, current){
@@ -113,7 +152,6 @@ if (Meteor.isServer) {
         // load Future
         Future = Npm.require('fibers/future');
         var myFuture = new Future();
-        
         getUserTweets(username, function(err, tweets){
           if (err) {
             return myFuture.throw(err);
