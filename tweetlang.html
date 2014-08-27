@@ -8,6 +8,7 @@
   {{> usernameInput}}
 
   {{> chart}}
+  {{> twitter}}
 
   <script type="text/javascript">
   WebFontConfig = {
@@ -37,4 +38,10 @@
     <canvas id="chart" width="500" height="500"></canvas>
   </div>
   {{{legend}}}
+</template>
+
+<template name="twitter">
+  <div>
+    <a class="twitter" href="http://twitter.com/share?url={{address}}&text={{text}}" target="_blank">Share this on Twitter</a>
+  </div>
 </template>

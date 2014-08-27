@@ -21,6 +21,15 @@ if (Meteor.isClient) {
       var username = $('#username').val().replace(/@/g,"");
       history.pushState({username : username}, null, '/'+username);
       fetchStats( username );
+    },
+    'keypress input[type=text]' : function(e){
+      if (!e) e = window.event;
+      var keyCode = e.keyCode || e.which;
+      if (keyCode == '13') {
+        var username = $('#username').val().replace(/@/g,"");
+        history.pushState({username : username}, null, '/'+username);
+        fetchStats( username );
+      }
     }
   });
 
@@ -49,16 +58,24 @@ if (Meteor.isClient) {
       }
       $('input[type=button]').removeClass('disabled').val('Gogogo!');
 
+      var max = 0;
+      var maxLang;
+
       var data = Object.keys(result).map(function(key){
+        if (result[key] > max) {
+          max = result[key];
+          maxLang = key;
+        }
         return {
           value : result[key],
           label : key,
           color: '#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6)
         }
       });
-      
+      Session.set('mostTweeted', maxLang);
       refreshCanvas(data);
     });
+    Session.set('currentUsername', username);
   }
 
   Template.chart.legend = function(){
@@ -82,6 +99,18 @@ if (Meteor.isClient) {
     window.chart = chart;
   }
 
+  Template.twitter.address = function() {
+    return location.href+'/';
+  }
+
+  Template.twitter.text = function(){
+    var mostLanguage = Session.get('mostTweeted');
+    if (window.languages[mostLanguage]) {
+      mostLanguage = window.languages[mostLanguage];
+    }
+    return '@'+Session.get('currentUsername')+' tweet in '+mostLanguage+' the most!';
+  }
+
   Meteor.startup(function(){
     var username = location.pathname.replace(/\//g,'');
     if (username.length) {
@@ -92,13 +121,6 @@ if (Meteor.isClient) {
 }
 
 if (Meteor.isServer) {
-
-  // Router.map(function() {
-  //   this.route('usernameInput', { 
-  //     path: '/:username',
-  //     data: function() { return  }
-  //   });
-  // });
 
   Meteor.startup(function () {
     // code to run on server at startup
