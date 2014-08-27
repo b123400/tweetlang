@@ -18,35 +18,48 @@ if (Meteor.isClient) {
   Template.usernameInput.events({
     'click input[type=button]': function () {
       // template data, if any, is available in 'this'
-
-      $('input[type=button]').addClass('disabled').val('Loading...');
-
       var username = $('#username').val().replace(/@/g,"");
-
-      Meteor.call('getUserStats', username, function(err, result){
-        $('input[type=button]').removeClass('disabled').val('Try again');
-
-        if (result.error) {
-          err = result.error;
-        }
-        if (err) {
-          alert(err);
-          return;
-        }
-        $('input[type=button]').removeClass('disabled').val('Gogogo!');
-
-        var data = Object.keys(result).map(function(key){
-          return {
-            value : result[key],
-            label : key,
-            color: '#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6)
-          }
-        });
-        
-        refreshCanvas(data);
-      });
+      history.pushState({username : username}, null, '/'+username);
+      fetchStats( username );
     }
   });
+
+  $(window).on('popstate',function(e){
+    if (e.originalEvent.state) {
+      var username = e.originalEvent.state.username
+      $('input[type=text]').val(username);
+      fetchStats(username);
+    } else {
+      $('input[type=text]').val('');
+      ctx.clearRect(0,0,500,500);
+    }
+  });
+
+  function fetchStats (username) {
+    $('input[type=button]').addClass('disabled').val('Loading...');
+    Meteor.call('getUserStats', username, function(err, result){
+      $('input[type=button]').removeClass('disabled').val('Try again');
+
+      if (result.error) {
+        err = result.error;
+      }
+      if (err) {
+        alert(err);
+        return;
+      }
+      $('input[type=button]').removeClass('disabled').val('Gogogo!');
+
+      var data = Object.keys(result).map(function(key){
+        return {
+          value : result[key],
+          label : key,
+          color: '#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6)
+        }
+      });
+      
+      refreshCanvas(data);
+    });
+  }
 
   Template.chart.legend = function(){
     return Session.get('legend');
@@ -68,9 +81,25 @@ if (Meteor.isClient) {
     Session.set('legend', chart.generateLegend());
     window.chart = chart;
   }
+
+  Meteor.startup(function(){
+    var username = location.pathname.replace(/\//g,'');
+    if (username.length) {
+      $('input[type=text]').val(username);
+      fetchStats(username);
+    }
+  });
 }
 
 if (Meteor.isServer) {
+
+  // Router.map(function() {
+  //   this.route('usernameInput', { 
+  //     path: '/:username',
+  //     data: function() { return  }
+  //   });
+  // });
+
   Meteor.startup(function () {
     // code to run on server at startup
 
@@ -121,6 +150,7 @@ if (Meteor.isServer) {
           try{
             languagesArray = JSON.parse(body);
           }catch(e){
+            console.log(body);
             return callback('JSON Error '+e);
           }
           callback(null, languagesArray);
@@ -128,23 +158,17 @@ if (Meteor.isServer) {
       }
 
       // because microsoft says request cannot be too long
-      Async.parallel([
-        function(callback){
-          fetchLanguages(texts.slice(0,40), callback)
-        },
-        function(callback){
-          fetchLanguages(texts.slice(40,80), callback)
-        },
-        function(callback){
-          fetchLanguages(texts.slice(80,120), callback)
-        },
-        function(callback){
-          fetchLanguages(texts.slice(120,160), callback)
-        },
-        function(callback){
-          fetchLanguages(texts.slice(160,200), callback)
-        },
-      ], function (err, results) {
+      var splitIntoParts = 10;
+      var perPart = 200/splitIntoParts;
+      var fetches = [];
+      for (var i = 0; i < splitIntoParts; i++) {
+        fetches[i] = (function(i){
+          return function (callback) {
+            fetchLanguages( texts.slice( i*perPart, (i+1)*perPart ), callback )
+          }
+        })(i);
+      };
+      Async.parallel(fetches, function (err, results) {
         if (err) {
           return callback(err);
         }
