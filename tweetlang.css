@@ -1,10 +1,52 @@
 /* CSS declarations go here */
 body{
 	text-align: center;
-	background: #f8eee9;
+	background: white;
+	font-family: 'Open Sans';
 }
 canvas{
 	padding: 30px;
 	border-radius: 30px;
 	background: white;
+}
+
+h1{
+
+}
+
+input[type=text] {
+	font-size: 40px;
+}
+
+input[type=button] {
+	font-size: 25px;
+	background: rgb(55, 218, 186);
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 20px;
+	margin-top: 20px;
+	outline: none;
+}
+
+input.disabled[type=button] {
+	background: rgb(172, 172, 172);
+}
+
+ul {
+	list-style: none;
+	text-align: left;
+	width: 200px;
+	display: inline-block;
+	border: solid 1px #999;
+	border-radius: 20px;
+	padding-left: 20px;
+	padding-top: 4px;
+}
+
+span{
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	margin-right: 20px;
 }

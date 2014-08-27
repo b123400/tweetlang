@@ -3,21 +3,38 @@
 </head>
 
 <body>
+  <h1>TweetLang</h1>
+  <p>Find out which language are you tweeted in most:</p>
   {{> usernameInput}}
 
   {{> chart}}
+
+  <script type="text/javascript">
+  WebFontConfig = {
+    google: { families: [ 'Open+Sans:400,300,600,700:latin' ] }
+  };
+  (function() {
+    var wf = document.createElement('script');
+    wf.src = ('https:' == document.location.protocol ? 'https' : 'http') +
+      '://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js';
+    wf.type = 'text/javascript';
+    wf.async = 'true';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(wf, s);
+  })(); </script>
 </body>
 
 <template name="usernameInput">
-  <h1>TweetLang</h1>
   <p>{{result}}</p>
   <div class="input">
-    <input type="text" id="username">
-    <input type="button" value="Click" />
+    <input type="text" id="username" placeholder="@username"><BR/>
+    <input type="button" value="Gogogo!" />
   </div>
 </template>
 
 <template name="chart">
-  <canvas id="chart" width="500" height="500"></canvas>
+  <div>
+    <canvas id="chart" width="500" height="500"></canvas>
+  </div>
   {{{legend}}}
 </template>

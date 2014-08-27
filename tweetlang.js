@@ -18,11 +18,23 @@ if (Meteor.isClient) {
   Template.usernameInput.events({
     'click input[type=button]': function () {
       // template data, if any, is available in 'this'
-      if (typeof console !== 'undefined'){
-        console.log("You pressed the button");
-      }
 
-      Meteor.call('getUserStats', $('#username').val(), function(err, result){
+      $('input[type=button]').addClass('disabled').val('Loading...');
+
+      var username = $('#username').val().replace(/@/g,"");
+
+      Meteor.call('getUserStats', username, function(err, result){
+        $('input[type=button]').removeClass('disabled').val('Try again');
+
+        if (result.error) {
+          err = result.error;
+        }
+        if (err) {
+          alert(err);
+          return;
+        }
+        $('input[type=button]').removeClass('disabled').val('Gogogo!');
+
         var data = Object.keys(result).map(function(key){
           return {
             value : result[key],
@@ -30,6 +42,7 @@ if (Meteor.isClient) {
             color: '#'+('00000'+(Math.random()*(1<<24)|0).toString(16)).slice(-6)
           }
         });
+        
         refreshCanvas(data);
       });
     }
@@ -52,8 +65,8 @@ if (Meteor.isClient) {
       chart.destroy();
     }
     chart = new Chart(ctx).Doughnut(data,{});
-    Session.set('legend', chart.generateLegend())
-    window.chart = chart
+    Session.set('legend', chart.generateLegend());
+    window.chart = chart;
   }
 }
 
@@ -78,6 +91,10 @@ if (Meteor.isServer) {
           tweetsData = JSON.parse(body);
         }catch(e){
           return callback(e);
+        }
+        if((tweetsData.errors && tweetsData.errors[0])||tweetsData.error){
+          callback(tweetsData.error || tweetsData.errors[0].message);
+          return;
         }
         callback(null, tweetsData.map(function(tweet){
           return tweet.text;
@@ -152,9 +169,11 @@ if (Meteor.isServer) {
         // load Future
         Future = Npm.require('fibers/future');
         var myFuture = new Future();
+
         getUserTweets(username, function(err, tweets){
           if (err) {
-            return myFuture.throw(err);
+            myFuture.throw(err);
+            return;
           }
           detectLanguages(tweets, function(err, counts){
             if (err) {
@@ -163,8 +182,13 @@ if (Meteor.isServer) {
             myFuture.return(counts);
           });
         });
-    
-        return myFuture.wait();
+        var val;
+        try{
+          val = myFuture.wait();
+          return val;
+        }catch(e){
+          return { error : e.message }
+        }
       }
     });
   });
