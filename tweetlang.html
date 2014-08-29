@@ -4,11 +4,13 @@
 
 <body>
   <h1>TweetLang</h1>
-  <p>Find out which language are you tweeted in most:</p>
+  <p>Find out which language did you tweeted in most:</p>
   {{> usernameInput}}
 
   {{> chart}}
   {{> twitter}}
+
+  {{> credit }}
 
   <script type="text/javascript">
   WebFontConfig = {
@@ -43,5 +45,12 @@
 <template name="twitter">
   <div>
     <a class="twitter" href="http://twitter.com/share?url={{address}}&text={{text}}" target="_blank">Share this on Twitter</a>
+  </div>
+</template>
+
+<template name="credit">
+  <div>
+    <a href="https://github.com/b123400/tweetlang">Source code</a> |
+    <a href="http://b123400.net">b123400</a>
   </div>
 </template>

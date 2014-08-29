@@ -108,7 +108,7 @@ if (Meteor.isClient) {
     if (window.languages[mostLanguage]) {
       mostLanguage = window.languages[mostLanguage];
     }
-    return '@'+Session.get('currentUsername')+' tweet in '+mostLanguage+' the most!';
+    return '@'+Session.get('currentUsername')+' tweets in '+mostLanguage+' the most!';
   }
 
   Meteor.startup(function(){
