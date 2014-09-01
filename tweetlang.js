@@ -180,7 +180,7 @@ if (Meteor.isServer) {
       }
 
       // because microsoft says request cannot be too long
-      var splitIntoParts = 10;
+      var splitIntoParts = 20;
       var perPart = 200/splitIntoParts;
       var fetches = [];
       for (var i = 0; i < splitIntoParts; i++) {
